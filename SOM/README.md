@@ -26,5 +26,72 @@ SOM与kmeans算法有点相似，其基本思想也是，将距离小的个体�
 
 ### 网络初始化
 输入层网络节点数与输入样本维度（列数）相同，通常需要进行数据归一化，常见的方法是标准归一化。
-竞争层网络根据数据维度以及分类类别数来确定，二维数据和4种分类的话，竞争层含4个节点，但是权重矩阵为4X2。对于分类类别数目不清楚的情况，可以定义竞争层多于可能的实际分类的节点，这样最后训练结果中不对应分类结果的节点始终不会收到刺激而兴奋，即抑制。
+竞争层网络根据数据维度以及分类类别数来确定，二维数据和4种分类的话
+，竞争层含4个节点，但是权重矩阵为4X2，权重矩阵的初始化一般·随机给一个0-1之间的随机值。对于分类类别数目不清楚的情况，可以定义竞争层多于可能的实际分类的节点，这样最后训练结果中不对应分类结果的节点始终不会收到刺激而兴奋，即抑制。
+
+学习率会影响收敛速度，一般定义一个动态的学习率，随迭代次数增加而递减。优胜邻域半径也定义为一个动态收缩的，随着迭代次数增加而递减。
+
+	# 学习率和学习半径函数	
+	def ratecalc(self,indx):
+		lrate = self.lratemax-(float(indx)+1.0)/float(self.Steps)*(self.lratemax-self.lratemin) 
+		r = self.rmax-(float(indx)+1.0)/float(self.Steps)*(self.rmax-self.rmin)
+		return lrate,r
+
+### 网络训练
+训练过程如下：
+1. 随机抽取一个数据样本，计算竞争层中神经元对应的权重矩阵与数据样本的距离，找到距离最近的为获胜节点。
+2. 根据优胜邻域半径，找出此邻域内的所有节点。
+3. 根据学习率调整优胜邻域半径内的所有节点，然后回到步骤1进行迭代，直到到达相应的迭代次数
+4. 根据最终的迭代结果，为分类结果分配标签。
+
+	# 主算法	
+	def train(self):
+    #1 构建输入层网络
+		dm,dn = shape(self.dataMat) 
+		normDataset = self.normalize(self.dataMat) # 归一化数据x
+		#2 构建分类网格
+		grid = self.init_grid() # 初始化第二层分类网格 
+		#3 构建两层之间的权重向量
+		self.w = random.rand(dn,self.M*self.N); #随机初始化权值 w
+		distM = self.distEclud   # 确定距离公式
+		#4 迭代求解
+		if self.Steps < 10*dm:	self.Steps = 10*dm   # 设定最小迭代次数
+		for i in range(self.Steps): 	
+			lrate,r = self.ratecalc(i) # 计算学习率和分类半径
+			self.lratelist.append(lrate);self.rlist.append(r)
+			# 随机生成样本索引，并抽取一个样本
+			k = random.randint(0,dm) 
+			mySample = normDataset[k,:] 	
+	
+			# 计算最优节点：返回最小距离的索引值
+			minIndx= (distM(mySample,self.w)).argmin()
+			d1 = int(round(minIndx - r));
+			d2 = int(round(minIndx + r));
+			
+			if(d1<0): 
+				d1=0
+			if(d2>(shape(self.w)[1]-1)):
+				d2= shape(self.w)[1]-1
+			di=d1;
+			#print(d1,d2)
+			while(di<=d2):
+				self.w[:,di] = self.w[:,di]+lrate*(mySample[0]-self.w[:,di])
+				di=di+1
+                
+		# 分配类别标签
+		for i in range(dm):
+			self.classLabel.append(distM(normDataset[i,:],self.w).argmin())
+		self.classLabel = mat(self.classLabel)		
+
+具体实现代码可见：[https://github.com/lkj1114889770/Machine-Leanring-Algorithm/tree/master/SOM](https://github.com/lkj1114889770/Machine-Leanring-Algorithm/tree/master/SOM)
+
+针对数据集的分类结果：
+
+![](https://i.imgur.com/KSlpNem.png)
+
+
+**
+参考文献：**
+1. 《机器学习算法与编程实践》 郑捷著；
+
 
