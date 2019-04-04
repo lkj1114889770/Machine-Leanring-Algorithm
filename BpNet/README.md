@@ -63,8 +63,7 @@ BP算法中还有一个动量因子（mc），主要是网络调优，防止网�
 
 ![](https://i.imgur.com/xAXcgfX.png)
             
-可以看到在1000次左右迭代就已经出现了比较好的结果了。  
-具体代码可见个人github仓库[https://github.com/lkj1114889770/Machine-Leanring-Algorithm/tree/master/BpNet](https://github.com/lkj1114889770/Machine-Leanring-Algorithm/tree/master/BpNet)        
+可以看到在1000次左右迭代就已经出现了比较好的结果了。        
             
 除了分类，BP神经网络也常用在函数逼近，这时候输出层神经元激活函数一般就不会再采用sigmod函数了，通常采用线性函数。
 
